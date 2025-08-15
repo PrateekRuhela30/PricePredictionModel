@@ -1,24 +1,49 @@
 import streamlit as st
 import pandas as pd
-import joblib
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
-# Load trained model
-model_data = joblib.load("model.pkl")
-pipeline = model_data["model"]
-feature_names = model_data["features"]
+# ----------------------
+# 1. Load dataset
+# ----------------------
+df = pd.read_csv("laptop_prices.csv")  # Make sure CSV is in your repo
 
-st.title("💻 Laptop Price Prediction")
+X = df[['Brand', 'RAM', 'Storage', 'Processor']]
+y = df['Price']
 
-# Input form
-brand = st.selectbox("Brand", ["Dell", "HP", "Lenovo", "Apple", "Asus"])
-ram = st.selectbox("RAM", ["8GB", "16GB", "32GB"])
-storage = st.selectbox("Storage", ["256GB SSD", "512GB SSD", "1TB SSD", "1TB HDD"])
-processor = st.selectbox("Processor", ["i3", "i5", "i7", "i9", "Ryzen 5", "Ryzen 7", "M1"])
+# ----------------------
+# 2. Build pipeline
+# ----------------------
+categorical_features = ['Brand', 'RAM', 'Storage', 'Processor']
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features)
+    ]
+)
+
+model = Pipeline(steps=[
+    ("preprocessor", preprocessor),
+    ("regressor", RandomForestRegressor(n_estimators=100, random_state=42))
+])
+
+# Train model
+model.fit(X, y)
+
+# ----------------------
+# 3. Streamlit UI
+# ----------------------
+st.title("Laptop Price Prediction Model")
+
+brand = st.selectbox("Brand", df['Brand'].unique())
+ram = st.selectbox("RAM", df['RAM'].unique())
+storage = st.selectbox("Storage", df['Storage'].unique())
+processor = st.selectbox("Processor", df['Processor'].unique())
 
 if st.button("Predict Price"):
-    # Prepare input data
-    input_data = pd.DataFrame([[brand, ram, storage, processor]], columns=feature_names)
-
-    # Prediction
-    predicted_price = pipeline.predict(input_data)[0]
-    st.success(f"Estimated Price: ₹{predicted_price:,.0f}")
+    input_data = pd.DataFrame([[brand, ram, storage, processor]],
+                              columns=['Brand', 'RAM', 'Storage', 'Processor'])
+    predicted_price = model.predict(input_data)[0]
+    st.success(f"Predicted Price: ₹{predicted_price:,.2f}")
