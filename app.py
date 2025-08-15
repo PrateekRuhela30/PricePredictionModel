@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 # ----------------------
 # 1. Load dataset
 # ----------------------
-df = pd.read_csv("laptop_prices.csv")  # Make sure CSV is in your repo
+df = pd.read_csv("products_realistic.csv")  # Make sure CSV is in your repo
 
 X = df[['Brand', 'RAM', 'Storage', 'Processor']]
 y = df['Price']
